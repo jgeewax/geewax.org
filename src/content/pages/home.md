@@ -41,6 +41,6 @@ work:
     url: https://aip.dev
 ---
 
-I'm Director, Applied AI at Google DeepMind in Singapore. We push the technical boundaries of DeepMind's models, across Gemini, Gemma, WeatherNext, MetNet and more, staying six months or more ahead of their out-of-the-box capabilities.
+I'm Director, Applied AI at Google DeepMind in Singapore.
 
-Before DeepMind I was at Meta, and before that I spent more than a decade at Google, where I led API design across Alphabet and worked with central banks and regulators on real-time payment systems. I've written two books along the way.
+Previously I spent a few years at Meta, and before that I was at Google for over a decade, working on ad systems, Google Cloud, API design and payments. I wrote a couple of books and research papers along the way.

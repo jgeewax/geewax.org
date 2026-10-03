@@ -116,6 +116,18 @@ const host = (u: string) => u.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/,
       text-align: left;
     }
   }
+  /* On phones, drop the paper-sheet frame so the text uses the page margins. */
+  @media (max-width: 40rem) {
+    .sheet {
+      background: none;
+      border: 0;
+      box-shadow: none;
+      padding: 0;
+    }
+    .toolbar {
+      padding-top: 1.5rem;
+    }
+  }
 
   /* Markdown body. "### Role" + "**Company** · Place · Dates" */
   .resume > :global(p:first-child) {

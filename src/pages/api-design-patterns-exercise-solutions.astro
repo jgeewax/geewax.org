@@ -203,6 +203,14 @@ const chapters = [...new Set(exercises.map((e) => e.data.chapter))].map((ch) => 
   .toggle-all {
     margin-left: auto;
   }
+  @media (max-width: 40rem) {
+    .toc {
+      padding: 1.1rem;
+    }
+    .toggle-all {
+      margin-left: 0;
+    }
+  }
 
   /* Chapters & exercises */
   .chapter {

@@ -21,7 +21,8 @@
   --shadow: 0 1px 2px rgb(40 30 20 / 0.06), 0 8px 24px -8px rgb(40 30 20 / 0.12);
   --shadow-lift: 0 2px 4px rgb(40 30 20 / 0.08), 0 20px 40px -12px rgb(40 30 20 / 0.22);
 
-  --wrap: min(100% - 2rem, 68rem);
+  --gutter: clamp(1.375rem, 6vw, 2.5rem);
+  --wrap: min(100% - 2 * var(--gutter), 68rem);
   --measure: 40rem;
   --radius: 10px;
   --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
@@ -138,6 +139,9 @@ hr {
   width: var(--wrap);
   margin-inline: auto;
 }
+.nowrap {
+  white-space: nowrap;
+}
 .visually-hidden {
   position: absolute !important;
   width: 1px;
@@ -183,7 +187,7 @@ hr {
   font-variant-numeric: tabular-nums;
 }
 .lede {
-  font-size: clamp(1.25rem, 1.1rem + 0.6vw, 1.5rem);
+  font-size: clamp(1.15rem, 1.05rem + 0.6vw, 1.5rem);
   line-height: 1.5;
   color: var(--ink-2);
 }
