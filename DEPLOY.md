@@ -7,7 +7,7 @@ The new site is in this folder and builds cleanly. What's left is content only y
 ```
 1. Get everything out of Ghost        (content ✅; members + Stripe left)
 2. Fill in the TODO(jj) list          (1 hour, needs you)
-3. Push to GitHub                     (10 min)
+3. Push to GitHub                     ✅ done
 4. Point DNS at GitHub Pages          (10 min + up to an hour for HTTPS)
 5. Check the live site                (10 min)
 6. Cancel Ghost and tidy up           (15 min)
@@ -81,23 +81,17 @@ npm run preview                      # serve the production build
 
 ---
 
-## 3. Push to GitHub
+## 3. Push to GitHub ✅ done
 
-Your existing `jgeewax/jgeewax.github.io` repo (2014 dotfiles) can stay as it is. The site goes in a new repo:
+- Repo: https://github.com/jgeewax/geewax.org (public). Your old `jgeewax/jgeewax.github.io` dotfiles repo is untouched.
+- **Settings → Pages:** source is GitHub Actions, custom domain is `www.geewax.org` (also in `public/CNAME`).
+- The **Deploy** workflow (`.github/workflows/deploy.yml`) runs on every push to `main`: TODO, link and punctuation checks, then build, then résumé PDF, then publish. Pull requests run the same checks without publishing. The first run passed.
+
+Until DNS points at GitHub (step 4), the new site isn't visible at geewax.org, and the github.io address redirects to the domain. To check what GitHub is serving before switching:
 
 ```sh
-git init -b main
-git add .
-git commit -m "New geewax.org"
-gh repo create jgeewax/geewax.org --public --source=. --push
+curl --resolve www.geewax.org:80:185.199.108.153 http://www.geewax.org/speaking/
 ```
-
-Then on GitHub, in **jgeewax/geewax.org → Settings → Pages**:
-
-- **Source:** GitHub Actions
-- **Custom domain:** `www.geewax.org` (also in `public/CNAME`)
-
-The **Deploy** workflow (`.github/workflows/deploy.yml`) runs on every push to `main`: TODO check → build → résumé PDF → publish. Pull requests run the same checks without publishing.
 
 **Verify the domain** so nobody else can claim it on GitHub: **your account Settings → Pages → Add a domain → `geewax.org`**. GitHub gives you a TXT record to add in Cloudflare. It's one extra record and prevents domain takeover.
 
