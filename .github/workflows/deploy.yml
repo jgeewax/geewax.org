@@ -1,0 +1,61 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+
+      # Refuses to publish while any TODO(jj) is left (résumé dates, exercise posts, ...).
+      - run: npm run check:todos
+
+      - run: npm run build
+
+      # Every internal link resolves, and none hard-code https://www.geewax.org.
+      - run: npm run check:links
+
+      # House style: no en/em dashes, ellipsis characters or curly quotes.
+      - run: npm run check:chars
+
+      # Résumé → PDF with the runner's preinstalled Chrome.
+      - run: npm run pdf
+
+      # Keep the old Ghost résumé link working.
+      - run: |
+          mkdir -p dist/content/files/2022/10
+          cp dist/jj-geewax-resume.pdf "dist/content/files/2022/10/Resume---JJ-Geewax---2022-1.pdf"
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

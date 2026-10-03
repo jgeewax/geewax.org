@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.astro/
+.DS_Store
+*.log
+# Ghost exports contain subscriber emails. Never commit them.
+ghost-export*.json
+*.ghost.*.json
+*.ghost.*.csv
+members*.csv

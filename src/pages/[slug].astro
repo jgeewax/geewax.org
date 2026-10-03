@@ -1,0 +1,169 @@
+---
+import { render } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import { getPosts, formatDate, readingMinutes, tagLabel, type Post } from '../lib/posts';
+import { articleJsonLd } from '../lib/jsonld';
+
+export async function getStaticPaths() {
+  const posts = await getPosts();
+  return posts.map((post, i) => ({
+    params: { slug: post.id },
+    props: { post, newer: posts[i - 1], older: posts[i + 1] },
+  }));
+}
+
+interface Props {
+  post: Post;
+  newer?: Post;
+  older?: Post;
+}
+const { post, newer, older } = Astro.props;
+const { Content } = await render(post);
+const { title, description, date, tags, image } = post.data;
+const url = new URL(Astro.url.pathname, Astro.site).toString();
+---
+
+<Base
+  title={title}
+  description={description}
+  image={image}
+  type="article"
+  jsonLd={articleJsonLd({ title, description, date, url, image })}
+>
+  <meta slot="head" property="article:published_time" content={date.toISOString()} />
+  <div class="progress" aria-hidden="true"></div>
+  <article class="wrap">
+    <header class="post-head">
+      <a class="arrow-back" href="/writing/">Writing</a>
+      <h1 transition:name={`title-${post.id}`}>{title}</h1>
+      <p class="meta">
+        <time datetime={date.toISOString()}>{formatDate(date)}</time>
+        <span aria-hidden="true"> · </span>
+        {readingMinutes(post.body)} min read
+        {
+          tags.map((t) => (
+            <>
+              <span aria-hidden="true"> · </span>
+              <a href={`/tag/${t}/`}>{tagLabel(t)}</a>
+            </>
+          ))
+        }
+      </p>
+    </header>
+
+    <div class="prose">
+      <Content />
+    </div>
+
+    <nav class="pager" aria-label="More writing">
+      {
+        older ? (
+          <a href={`/${older.id}/`} class="older">
+            <span class="label">Previous</span>
+            <span class="t">{older.data.title}</span>
+          </a>
+        ) : (
+          <span />
+        )
+      }
+      {
+        newer && (
+          <a href={`/${newer.id}/`} class="newer">
+            <span class="label">Next</span>
+            <span class="t">{newer.data.title}</span>
+          </a>
+        )
+      }
+    </nav>
+  </article>
+</Base>
+
+<style>
+  .progress {
+    position: fixed;
+    inset: 0 0 auto 0;
+    height: 2px;
+    z-index: 60;
+    background: var(--accent);
+    transform-origin: 0 50%;
+    transform: scaleX(0);
+    animation: progress linear both;
+    animation-timeline: scroll(root);
+  }
+  @supports not (animation-timeline: scroll()) {
+    .progress {
+      display: none;
+    }
+  }
+  @keyframes progress {
+    to {
+      transform: scaleX(1);
+    }
+  }
+  article {
+    max-width: var(--measure);
+  }
+  .post-head {
+    padding-block: clamp(2.5rem, 7vw, 5rem) 2.5rem;
+  }
+  .arrow-back {
+    font: 500 0.875rem var(--sans);
+    color: var(--ink-3);
+    text-decoration: none;
+  }
+  .arrow-back::before {
+    content: '← ';
+  }
+  .arrow-back:hover {
+    color: var(--accent);
+  }
+  h1 {
+    font-size: clamp(2.25rem, 1.6rem + 3vw, 3.5rem);
+    letter-spacing: -0.02em;
+    margin: 1.25rem 0 1rem;
+    width: fit-content;
+  }
+  .meta a {
+    color: var(--ink-3);
+    text-decoration: none;
+  }
+  .meta a:hover {
+    color: var(--accent);
+  }
+  .pager {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 4rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--rule);
+  }
+  .pager a {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    text-decoration: none;
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s var(--ease);
+  }
+  .pager a:hover {
+    border-color: var(--rule-strong);
+    box-shadow: var(--shadow);
+    transform: translateY(-1px);
+    color: var(--ink);
+  }
+  .pager .newer {
+    text-align: right;
+  }
+  .pager .t {
+    font-size: 1.05rem;
+    line-height: 1.35;
+  }
+  @media (max-width: 36rem) {
+    .pager {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

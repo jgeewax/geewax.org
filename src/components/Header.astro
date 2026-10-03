@@ -1,0 +1,136 @@
+---
+import { SITE } from '../site';
+import ThemeToggle from './ThemeToggle.astro';
+
+const path = Astro.url.pathname;
+const isActive = (href: string) => path === href || (href === '/writing/' && path.startsWith('/tag/'));
+---
+
+<header class="site-header" transition:persist>
+  <div class="wrap bar">
+    <a class="wordmark" href="/" aria-label={`${SITE.name}, home`}>JJ Geewax</a>
+    <nav aria-label="Main">
+      <ul>
+        {
+          SITE.nav.map(({ href, label }) => (
+            <li>
+              <a href={href} aria-current={isActive(href) ? 'page' : undefined}>
+                {label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+    <ThemeToggle />
+  </div>
+</header>
+
+<script>
+  // Hairline under the header once the page has scrolled.
+  const header = document.querySelector<HTMLElement>('.site-header');
+  const onScroll = () => header?.classList.toggle('scrolled', window.scrollY > 8);
+  window.addEventListener('scroll', onScroll, { passive: true });
+  document.addEventListener('astro:page-load', onScroll);
+
+  // The header persists across navigations, so update the active link here.
+  document.addEventListener('astro:page-load', () => {
+    const path = location.pathname;
+    document.querySelectorAll<HTMLAnchorElement>('.site-header nav a').forEach((a) => {
+      const href = a.getAttribute('href')!;
+      const active = path === href || (href === '/writing/' && path.startsWith('/tag/'));
+      if (active) a.setAttribute('aria-current', 'page');
+      else a.removeAttribute('aria-current');
+    });
+  });
+</script>
+
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: color-mix(in srgb, var(--bg) 82%, transparent);
+    backdrop-filter: saturate(1.4) blur(12px);
+    -webkit-backdrop-filter: saturate(1.4) blur(12px);
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s;
+  }
+  .site-header.scrolled {
+    border-bottom-color: var(--rule);
+  }
+  .bar {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    height: 4rem;
+  }
+  .wordmark {
+    font-family: var(--serif);
+    font-size: 1.3rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    text-decoration: none;
+    margin-right: auto;
+    white-space: nowrap;
+  }
+  .wordmark:hover {
+    color: var(--ink);
+  }
+  ul {
+    display: flex;
+    gap: clamp(0.9rem, 2.5vw, 1.75rem);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  nav a {
+    position: relative;
+    font: 500 0.875rem var(--sans);
+    color: var(--ink-2);
+    text-decoration: none;
+    padding-block: 0.4rem;
+  }
+  nav a::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1.5px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.25s var(--ease);
+  }
+  nav a:hover {
+    color: var(--ink);
+  }
+  nav a:hover::after,
+  nav a[aria-current='page']::after {
+    transform: scaleX(1);
+  }
+  nav a[aria-current='page'] {
+    color: var(--ink);
+  }
+  @media (max-width: 34rem) {
+    .bar {
+      flex-wrap: wrap;
+      height: auto;
+      padding-block: 0.75rem;
+      row-gap: 0.4rem;
+    }
+    nav {
+      order: 3;
+      width: 100%;
+    }
+    ul {
+      justify-content: space-between;
+    }
+  }
+  @media print {
+    .site-header {
+      display: none;
+    }
+  }
+</style>

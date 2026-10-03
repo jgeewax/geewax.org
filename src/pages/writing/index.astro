@@ -1,0 +1,24 @@
+---
+import Base from '../../layouts/Base.astro';
+import PostList from '../../components/PostList.astro';
+import TagFilter from '../../components/TagFilter.astro';
+import { getPosts, allTags } from '../../lib/posts';
+
+const posts = await getPosts();
+---
+
+<Base title="Writing" description="Notes on API design, software engineering and the occasional legal rabbit hole, by JJ Geewax.">
+  <div class="wrap">
+    <header class="page-head rise">
+      <p class="eyebrow">Writing</p>
+      <h1>Notes and how-tos</h1>
+      <p class="lede">
+        API design, software engineering, and the occasional legal rabbit hole. Subscribe with <a href="/rss.xml"
+          >RSS</a
+        >.
+      </p>
+    </header>
+    <TagFilter tags={allTags(posts)} total={posts.length} />
+    <PostList posts={posts} groupByYear />
+  </div>
+</Base>

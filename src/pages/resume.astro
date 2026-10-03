@@ -1,0 +1,236 @@
+---
+import { getEntry, render } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import { personJsonLd } from '../lib/jsonld';
+import { SITE } from '../site';
+
+const page = (await getEntry('pages', 'resume'))!;
+const { Content } = await render(page);
+const host = (u: string) => u.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
+---
+
+<Base title="Résumé" description={page.data.description} jsonLd={personJsonLd()}>
+  <div class="wrap">
+    <div class="toolbar">
+      <p class="meta">Résumé</p>
+      <div class="tools">
+        <a class="button primary" href="/jj-geewax-resume.pdf" download>
+          <svg viewBox="0 0 24 24" aria-hidden="true"
+            ><path
+              d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19h14"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.7"
+              stroke-linecap="round"
+              stroke-linejoin="round"></path></svg
+          >
+          Download PDF
+        </a>
+        <button type="button" class="button" onclick="window.print()">Print</button>
+      </div>
+    </div>
+
+    <article class="sheet">
+      <header class="sheet-head">
+        <div>
+          <h1>{SITE.name}</h1>
+          <p class="role">{SITE.title}</p>
+        </div>
+        <ul class="contact">
+          <li><a href={`mailto:${SITE.email}`}>{SITE.email}</a></li>
+          <li><a href={SITE.links.linkedin}>{host(SITE.links.linkedin)}</a></li>
+          <li><a href={SITE.url} data-absolute>{host(SITE.url)}</a></li>
+          <li>{SITE.location}</li>
+        </ul>
+      </header>
+      <div class="resume">
+        <Content />
+      </div>
+    </article>
+  </div>
+</Base>
+
+<style>
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-block: 2rem 1.25rem;
+    max-width: 52rem;
+    margin-inline: auto;
+  }
+  .toolbar p {
+    margin: 0;
+  }
+  .tools {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .sheet {
+    max-width: 52rem;
+    margin-inline: auto;
+    background: var(--bg-elev);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    box-shadow: var(--shadow-lift);
+    padding: clamp(1.5rem, 5vw, 3.5rem) clamp(1.25rem, 6vw, 4rem);
+    font-size: 1.02rem;
+    line-height: 1.5;
+    animation: rise 0.6s var(--ease) both;
+  }
+  .sheet-head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 1rem 2rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 2px solid var(--ink);
+  }
+  h1 {
+    font-size: clamp(2.25rem, 1.8rem + 2vw, 3rem);
+    letter-spacing: -0.025em;
+    margin: 0;
+    line-height: 1;
+  }
+  .role {
+    margin: 0.5rem 0 0;
+    font: italic 1.15rem var(--serif);
+    color: var(--ink-2);
+  }
+  .contact {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font: 0.8125rem/1.6 var(--sans);
+    color: var(--ink-2);
+    text-align: right;
+  }
+  .contact a {
+    text-decoration: none;
+  }
+  @media (max-width: 36rem) {
+    .contact {
+      text-align: left;
+    }
+  }
+
+  /* Markdown body. "### Role" + "**Company** · Place · Dates" */
+  .resume > :global(p:first-child) {
+    margin: 1.25rem 0 0;
+    color: var(--ink-2);
+    font-size: 1.08rem;
+  }
+  .resume :global(h2) {
+    font: 600 0.75rem var(--sans);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 2rem 0 0.25rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  .resume :global(h3) {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin: 1.1rem 0 0;
+    letter-spacing: -0.005em;
+  }
+  .resume :global(h3 + p) {
+    margin: 0.1rem 0 0.4rem;
+    font: 0.8125rem var(--sans);
+    color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+  }
+  .resume :global(h3 + p strong) {
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .resume :global(ul) {
+    margin: 0.3rem 0 0;
+    padding-left: 1.1rem;
+  }
+  .resume :global(li) {
+    margin-bottom: 0.25rem;
+  }
+  .resume :global(li::marker) {
+    color: var(--ink-3);
+  }
+  .resume :global(h2 + ul) {
+    margin-top: 0.75rem;
+  }
+  .resume :global(a) {
+    text-decoration-color: var(--rule-strong);
+  }
+
+  /* --- Print / PDF ------------------------------------------------------- */
+  @media print {
+    @page {
+      size: A4;
+      margin: 13mm 15mm;
+    }
+    :global(html),
+    :global(body) {
+      background: #fff !important;
+      color: #111 !important;
+    }
+    :global(.skip-link),
+    .toolbar {
+      display: none !important;
+    }
+    .sheet {
+      max-width: none;
+      border: 0;
+      box-shadow: none;
+      padding: 0;
+      font-size: 9.6pt;
+      line-height: 1.38;
+      animation: none;
+      background: #fff;
+      color: #111;
+      --ink: #111;
+      --ink-2: #333;
+      --ink-3: #555;
+      --rule: #ddd;
+      --accent: #8a2f17;
+    }
+    h1 {
+      font-size: 24pt;
+    }
+    .role {
+      font-size: 11.5pt;
+    }
+    .contact {
+      font-size: 8.5pt;
+    }
+    .resume > :global(p:first-child) {
+      font-size: 10pt;
+      margin-top: 8pt;
+    }
+    .resume :global(h2) {
+      font-size: 7.5pt;
+      margin: 12pt 0 2pt;
+      break-after: avoid;
+    }
+    .resume :global(h3) {
+      font-size: 11pt;
+      margin-top: 7pt;
+      break-after: avoid;
+    }
+    .resume :global(h3 + p) {
+      font-size: 8pt;
+      margin-bottom: 2pt;
+      break-after: avoid;
+    }
+    .resume :global(li) {
+      margin-bottom: 1.5pt;
+      break-inside: avoid;
+    }
+    .resume :global(a) {
+      color: inherit;
+      text-decoration: none;
+    }
+  }
+</style>

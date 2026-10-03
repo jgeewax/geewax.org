@@ -1,0 +1,453 @@
+---
+import { getEntry, render } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import { personJsonLd } from '../lib/jsonld';
+import { inlineMd, plainMd } from '../lib/posts';
+import { SITE } from '../site';
+
+const page = (await getEntry('pages', 'speaking'))!;
+const { Content } = await render(page);
+const { bios, topics = [], talks = [], headshot } = page.data;
+
+const lengths = [
+  { key: 'short', label: 'Short' },
+  { key: 'medium', label: 'Medium' },
+  { key: 'long', label: 'Long' },
+] as const;
+const bioViews = lengths.map(({ key, label }) => {
+  const text = bios?.[key] ?? '';
+  const paras = text.split(/\n+/).map((s) => s.trim()).filter(Boolean);
+  return {
+    key,
+    label,
+    html: paras.map((p) => `<p>${inlineMd(p)}</p>`).join(''),
+    plain: paras.map(plainMd).join('\n\n'),
+    words: plainMd(text).split(/\s+/).filter(Boolean).length,
+  };
+});
+const invite = `mailto:${SITE.email}?subject=${encodeURIComponent('Speaking invitation')}`;
+---
+
+<Base title={page.data.title} description={page.data.description} jsonLd={personJsonLd()}>
+  <div class="wrap">
+    <header class="page-head rise">
+      <p class="eyebrow">Speaking</p>
+      <h1>Speaker kit</h1>
+      <div class="lede"><Content /></div>
+      <div class="actions">
+        <a class="button primary" href={invite}>Invite JJ to speak</a>
+        <a class="button" href="#bio">Copy a bio</a>
+      </div>
+    </header>
+
+    <div class="kit">
+      <section id="bio" class="bio-block" aria-labelledby="bio-h">
+        <div class="bio-head">
+          <h2 id="bio-h" class="label">Bio</h2>
+          <p class="meta">Third person. Pick a length.</p>
+        </div>
+        <bio-switcher>
+          <div class="tabs" role="tablist" aria-label="Bio length">
+            {
+              bioViews.map((b, i) => (
+                <button
+                  type="button"
+                  role="tab"
+                  id={`tab-${b.key}`}
+                  aria-controls={`bio-${b.key}`}
+                  aria-selected={i === 1 ? 'true' : 'false'}
+                  tabindex={i === 1 ? 0 : -1}
+                >
+                  {b.label}
+                  <span class="count">{b.words} words</span>
+                </button>
+              ))
+            }
+          </div>
+          {
+            bioViews.map((b, i) => (
+              <div
+                class="bio-text"
+                role="tabpanel"
+                id={`bio-${b.key}`}
+                aria-labelledby={`tab-${b.key}`}
+                hidden={i !== 1}
+                data-plain={b.plain}
+                set:html={b.html}
+              />
+            ))
+          }
+          <div class="bio-actions">
+            <button type="button" class="button copy">
+              <svg viewBox="0 0 24 24" aria-hidden="true"
+                ><rect x="8" y="8" width="12" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"
+                ></rect><path
+                  d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.6"></path></svg
+              >
+              <span class="copy-label">Copy bio</span>
+            </button>
+            <span class="toast meta" role="status" aria-live="polite"></span>
+          </div>
+        </bio-switcher>
+      </section>
+
+      <aside class="side">
+        <figure class="headshot">
+          {
+            headshot ? (
+              <>
+                <img src={headshot} alt="JJ Geewax" width="480" height="600" />
+                <figcaption>
+                  <a class="arrow-link" href={headshot} download>
+                    Download high-res headshot
+                  </a>
+                </figcaption>
+              </>
+            ) : (
+              <div class="headshot-request">
+                <span class="mono" aria-hidden="true">JG</span>
+                <p class="meta">
+                  Need a headshot? <a href={`mailto:${SITE.email}?subject=Headshot`}>Email me</a> and I'll send a
+                  high-res one.
+                </p>
+              </div>
+            )
+          }
+        </figure>
+
+        <dl class="facts">
+          <div><dt class="label">Name</dt><dd>JJ Geewax</dd></div>
+          <div><dt class="label">Title</dt><dd>{SITE.role}, {SITE.org}</dd></div>
+          <div><dt class="label">Based in</dt><dd>Singapore (UTC+8)</dd></div>
+          <div>
+            <dt class="label">Books</dt><dd><cite>API Design Patterns</cite>, <cite>Google Cloud Platform in Action</cite></dd>
+          </div>
+          <div><dt class="label">Contact</dt><dd><a href={invite}>{SITE.email}</a></dd></div>
+        </dl>
+      </aside>
+    </div>
+
+    <section class="section" aria-labelledby="topics">
+      <div class="section-head"><h2 id="topics">Topics</h2></div>
+      <div class="topics">
+        {
+          topics.map((t, i) => (
+            <article class="topic">
+              <span class="n meta">{String(i + 1).padStart(2, '0')}</span>
+              <h3>{t.title}</h3>
+              <p set:html={inlineMd(t.blurb)} />
+            </article>
+          ))
+        }
+      </div>
+    </section>
+
+    {
+      talks.length > 0 && (
+        <section class="section" aria-labelledby="talks">
+          <div class="section-head">
+            <h2 id="talks">Past talks</h2>
+          </div>
+          <ol class="talks">
+            {talks.map((t) => (
+              <li>
+                <span class="meta">{t.year}</span>
+                <div>
+                  <p class="talk-title">{t.url ? <a href={t.url}>{t.title}</a> : t.title}</p>
+                  <p class="meta">
+                    {t.event}
+                    {t.location && <> · {t.location}</>}
+                    {t.video && (
+                      <>
+                        {' · '}
+                        <a href={t.video}>Watch</a>
+                      </>
+                    )}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )
+    }
+  </div>
+</Base>
+
+<script>
+  class BioSwitcher extends HTMLElement {
+    connectedCallback() {
+      const tabs = [...this.querySelectorAll<HTMLButtonElement>('[role=tab]')];
+      const panels = [...this.querySelectorAll<HTMLElement>('[role=tabpanel]')];
+      const copyBtn = this.querySelector<HTMLButtonElement>('.copy')!;
+      const label = this.querySelector<HTMLElement>('.copy-label')!;
+      const toast = this.querySelector<HTMLElement>('.toast')!;
+
+      const select = (i: number, focus = false) => {
+        tabs.forEach((t, j) => {
+          t.setAttribute('aria-selected', String(i === j));
+          t.tabIndex = i === j ? 0 : -1;
+        });
+        panels.forEach((p, j) => (p.hidden = i !== j));
+        if (focus) tabs[i].focus();
+        label.textContent = `Copy ${tabs[i].firstChild?.textContent?.trim().toLowerCase()} bio`;
+      };
+      tabs.forEach((t, i) => {
+        t.addEventListener('click', () => select(i));
+        t.addEventListener('keydown', (e) => {
+          const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+          if (d) select((i + d + tabs.length) % tabs.length, true);
+        });
+      });
+      select(tabs.findIndex((t) => t.getAttribute('aria-selected') === 'true'));
+
+      copyBtn.addEventListener('click', async () => {
+        const panel = panels.find((p) => !p.hidden)!;
+        try {
+          await navigator.clipboard.writeText(panel.dataset.plain ?? panel.innerText);
+          toast.textContent = 'Copied to clipboard';
+        } catch {
+          const r = document.createRange();
+          r.selectNodeContents(panel);
+          getSelection()?.removeAllRanges();
+          getSelection()?.addRange(r);
+          toast.textContent = 'Selected. Press ⌘C to copy';
+        }
+        this.classList.add('copied');
+        setTimeout(() => {
+          toast.textContent = '';
+          this.classList.remove('copied');
+        }, 2200);
+      });
+    }
+  }
+  customElements.define('bio-switcher', BioSwitcher);
+</script>
+
+<style>
+  .lede :global(p) {
+    margin: 0;
+  }
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 2rem;
+  }
+
+  .kit {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 18rem;
+    gap: clamp(2rem, 5vw, 4rem);
+    align-items: start;
+    padding-bottom: clamp(3rem, 6vw, 5rem);
+  }
+  .kit > * {
+    min-width: 0;
+  }
+  @media (max-width: 52rem) {
+    .kit {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Bio */
+  .bio-block {
+    background: var(--bg-elev);
+    border: 1px solid var(--rule);
+    border-radius: 16px;
+    padding: clamp(1.25rem, 3vw, 2rem);
+    box-shadow: var(--shadow);
+  }
+  .bio-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  .bio-head h2,
+  .bio-head p {
+    margin: 0;
+  }
+  .tabs {
+    display: inline-flex;
+    padding: 4px;
+    gap: 2px;
+    border-radius: 999px;
+    background: var(--bg-sunk);
+    border: 1px solid var(--rule);
+    margin-bottom: 1.5rem;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  [role='tab'] {
+    font: 500 0.8125rem var(--sans);
+    color: var(--ink-2);
+    background: none;
+    border: 0;
+    border-radius: 999px;
+    padding: 0.5rem 0.9rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  }
+  @media (max-width: 30rem) {
+    [role='tab'] {
+      padding: 0.5rem 0.7rem;
+    }
+    [role='tab'] .count {
+      display: block;
+      margin: 0.1rem 0 0;
+      font-size: 0.7rem;
+    }
+  }
+  [role='tab'] .count {
+    color: var(--ink-3);
+    font-weight: 400;
+    margin-left: 0.3em;
+  }
+  [role='tab'][aria-selected='true'] {
+    background: var(--bg-elev);
+    color: var(--ink);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
+  }
+  .bio-text {
+    font-size: 1.15rem;
+    line-height: 1.65;
+    animation: rise 0.35s var(--ease);
+    border-radius: 8px;
+    transition: background 0.4s;
+  }
+  :global(bio-switcher.copied) .bio-text {
+    background: var(--accent-soft);
+  }
+  .bio-text :global(p) {
+    margin: 0 0 1rem;
+  }
+  .bio-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1.25rem;
+  }
+
+  /* Side */
+  .headshot {
+    margin: 0 0 2rem;
+  }
+  .headshot img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+  }
+  .headshot-request {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px dashed var(--rule-strong);
+    border-radius: 12px;
+  }
+  .headshot-request p {
+    margin: 0;
+  }
+  .mono {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 3.25rem;
+    height: 3.25rem;
+    border-radius: 999px;
+    background: var(--bg-sunk);
+    border: 1px solid var(--rule);
+    font: italic 500 1.3rem var(--serif);
+    color: var(--ink-2);
+  }
+  figcaption {
+    margin-top: 0.75rem;
+  }
+  .facts {
+    margin: 0;
+    display: grid;
+    gap: 1rem;
+  }
+  .facts dd {
+    margin: 0.2rem 0 0;
+    font-size: 1.05rem;
+    line-height: 1.4;
+  }
+
+  /* Topics */
+  .topics {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+  @media (max-width: 44rem) {
+    .topics {
+      grid-template-columns: 1fr;
+    }
+  }
+  .topic {
+    padding: 1.5rem;
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    transition: border-color 0.2s, transform 0.2s var(--ease), box-shadow 0.2s;
+  }
+  .topic:hover {
+    border-color: var(--rule-strong);
+    box-shadow: var(--shadow);
+    transform: translateY(-2px);
+  }
+  .topic .n {
+    color: var(--accent);
+  }
+  .topic h3 {
+    font-size: 1.35rem;
+    margin: 0.4rem 0 0.5rem;
+  }
+  .topic p {
+    margin: 0;
+    color: var(--ink-2);
+    font-size: 1.02rem;
+    line-height: 1.55;
+  }
+
+  /* Talks */
+  .talks {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .talks li {
+    display: grid;
+    grid-template-columns: 7.5rem 1fr;
+    column-gap: 1.5rem;
+    padding: 1rem 0;
+  }
+  .talks li + li {
+    border-top: 1px solid var(--rule);
+  }
+  .talks li > .meta {
+    padding-top: 0.3rem;
+  }
+  .talk-title {
+    font-size: 1.2rem;
+    margin: 0;
+  }
+  .talks p.meta {
+    margin: 0.25rem 0 0;
+  }
+  @media (max-width: 40rem) {
+    .talks li {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

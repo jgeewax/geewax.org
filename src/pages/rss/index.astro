@@ -1,0 +1,15 @@
+---
+// Ghost served the feed at /rss/. Point old subscribers at the new feed.
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Redirecting to /rss.xml</title>
+    <meta name="robots" content="noindex" />
+    <link rel="canonical" href="https://www.geewax.org/rss.xml" />
+    <meta http-equiv="refresh" content="0;url=/rss.xml" />
+  </head>
+  <body><a href="/rss.xml">The feed has moved to /rss.xml</a></body>
+</html>

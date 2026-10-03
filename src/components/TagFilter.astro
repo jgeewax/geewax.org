@@ -1,0 +1,56 @@
+---
+import { tagLabel } from '../lib/posts';
+
+interface Props {
+  tags: { tag: string; count: number }[];
+  active?: string;
+  total: number;
+}
+const { tags, active, total } = Astro.props;
+---
+
+<nav class="chips" aria-label="Filter by topic">
+  <a href="/writing/" aria-current={!active ? 'page' : undefined}>All <span>{total}</span></a>
+  {
+    tags.map(({ tag, count }) => (
+      <a href={`/tag/${tag}/`} aria-current={active === tag ? 'page' : undefined}>
+        {tagLabel(tag)} <span>{count}</span>
+      </a>
+    ))
+  }
+</nav>
+
+<style>
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 2.5rem;
+  }
+  a {
+    font: 500 0.8125rem var(--sans);
+    text-decoration: none;
+    color: var(--ink-2);
+    padding: 0.45rem 0.85rem;
+    border-radius: 999px;
+    border: 1px solid var(--rule-strong);
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+  }
+  a span {
+    color: var(--ink-3);
+    margin-left: 0.2em;
+    font-variant-numeric: tabular-nums;
+  }
+  a:hover {
+    border-color: var(--ink-3);
+    color: var(--ink);
+  }
+  a[aria-current='page'] {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--bg);
+  }
+  a[aria-current='page'] span {
+    color: color-mix(in srgb, var(--bg) 65%, transparent);
+  }
+</style>

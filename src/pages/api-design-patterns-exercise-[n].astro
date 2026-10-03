@@ -1,0 +1,24 @@
+---
+// Each solution used to be its own Ghost post at /api-design-patterns-exercise-3-1/.
+// They now all live on one page; send old links to the right exercise.
+import { getCollection } from 'astro:content';
+
+export async function getStaticPaths() {
+  const exercises = await getCollection('exercises', ({ data }) => !data.draft);
+  return exercises.map((e) => ({ params: { n: e.id } }));
+}
+
+const to = `/api-design-patterns-exercise-solutions/#exercise-${Astro.params.n}`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Redirecting...</title>
+    <meta name="robots" content="noindex" />
+    <link rel="canonical" href={new URL('/api-design-patterns-exercise-solutions/', Astro.site)} />
+    <meta http-equiv="refresh" content={`0;url=${to}`} />
+  </head>
+  <body><a href={to}>This solution has moved to the exercise solutions page.</a></body>
+</html>

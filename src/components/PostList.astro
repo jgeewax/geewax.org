@@ -1,0 +1,106 @@
+---
+import type { Post } from '../lib/posts';
+import { formatDate } from '../lib/posts';
+
+interface Props {
+  posts: Post[];
+  groupByYear?: boolean;
+}
+const { posts, groupByYear = false } = Astro.props;
+
+const groups = groupByYear
+  ? Object.entries(
+      posts.reduce<Record<string, Post[]>>((acc, p) => {
+        (acc[p.data.date.getUTCFullYear()] ??= []).push(p);
+        return acc;
+      }, {}),
+    ).sort((a, b) => Number(b[0]) - Number(a[0]))
+  : [['', posts] as const];
+---
+
+<div class="post-list">
+  {
+    groups.map(([year, items]) => (
+      <section class="group">
+        {year && <h2 class="year label">{year}</h2>}
+        <ol>
+          {items.map((p) => (
+            <li>
+              <a href={`/${p.id}/`}>
+                <time class="meta" datetime={p.data.date.toISOString()}>
+                  {formatDate(p.data.date, 'short')}
+                </time>
+                <span class="title" transition:name={`title-${p.id}`}>
+                  {p.data.title}
+                </span>
+                <span class="desc">{p.data.description}</span>
+              </a>
+            </li>
+          ))}
+        </ol>
+      </section>
+    ))
+  }
+</div>
+
+<style>
+  .group + .group {
+    margin-top: 2.5rem;
+  }
+  .year {
+    margin: 0 0 0.5rem;
+  }
+  ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  li + li {
+    border-top: 1px solid var(--rule);
+  }
+  a {
+    display: grid;
+    grid-template-columns: 7.5rem 1fr;
+    column-gap: 1.5rem;
+    padding: 1.1rem 0;
+    text-decoration: none;
+  }
+  time {
+    grid-row: span 2;
+    padding-top: 0.3rem;
+  }
+  .title {
+    font-size: 1.3rem;
+    font-weight: 500;
+    line-height: 1.3;
+    transition: color 0.15s;
+    width: fit-content;
+  }
+  .desc {
+    grid-column: 2;
+    color: var(--ink-3);
+    font-size: 1rem;
+    line-height: 1.5;
+    margin-top: 0.3rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  a:hover .title {
+    color: var(--accent);
+  }
+  @media (max-width: 40rem) {
+    a {
+      grid-template-columns: 1fr;
+    }
+    time {
+      grid-row: auto;
+      padding: 0 0 0.2rem;
+    }
+    .desc {
+      grid-column: 1;
+    }
+  }
+</style>

@@ -1,0 +1,71 @@
+---
+import { SITE } from '../site';
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="wrap inner">
+    <div>
+      <p class="name">{SITE.name}</p>
+      <p class="meta">{SITE.title} · {SITE.location}</p>
+    </div>
+    <ul class="links">
+      <li><a href={`mailto:${SITE.email}`}>Email</a></li>
+      <li><a href={SITE.links.linkedin}>LinkedIn</a></li>
+      <li><a href={SITE.links.github}>GitHub</a></li>
+      <li><a href={SITE.links.x}>X</a></li>
+      <li><a href="/rss.xml">RSS</a></li>
+    </ul>
+  </div>
+  <div class="wrap fine meta">
+    © {year} {SITE.name}. Views are my own.
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    margin-top: clamp(4rem, 8vw, 6rem);
+    border-top: 1px solid var(--rule);
+    padding-block: 2.5rem 2rem;
+  }
+  .inner {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1.5rem;
+  }
+  .name {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1.1rem;
+  }
+  .inner .meta {
+    margin: 0.2rem 0 0;
+  }
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.4rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font: 500 0.875rem var(--sans);
+  }
+  .links a {
+    text-decoration: none;
+    color: var(--ink-2);
+  }
+  .links a:hover {
+    color: var(--accent);
+  }
+  .fine {
+    margin-top: 2rem;
+    font-size: 0.75rem;
+  }
+  @media print {
+    .site-footer {
+      display: none;
+    }
+  }
+</style>

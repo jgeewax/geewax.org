@@ -1,0 +1,359 @@
+---
+import { getCollection, getEntry, render } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import { questionMd, readingMinutes } from '../lib/posts';
+
+const page = (await getEntry('pages', 'exercise-solutions'))!;
+const { Content: Intro } = await render(page);
+const chapterTitles = page.data.chapters ?? {};
+
+const order = (s: string) => s.split('.').map(Number);
+const exercises = await Promise.all(
+  (await getCollection('exercises', ({ data }) => import.meta.env.DEV || !data.draft))
+    .sort((a, b) => {
+      const [ac, an] = order(a.data.exercise);
+      const [bc, bn] = order(b.data.exercise);
+      return ac - bc || an - bn;
+    })
+    .map(async (e) => ({ ...e, Content: (await render(e)).Content, minutes: readingMinutes(e.body) })),
+);
+const chapters = [...new Set(exercises.map((e) => e.data.chapter))].map((ch) => ({
+  ch,
+  title: chapterTitles[String(ch)],
+  items: exercises.filter((e) => e.data.chapter === ch),
+}));
+---
+
+<Base title={page.data.title} description={page.data.description}>
+  <div class="wrap">
+    <header class="page-head rise">
+      <p class="eyebrow">API Design Patterns</p>
+      <h1>Exercise solutions</h1>
+    </header>
+
+    <div class="intro">
+      <div class="prose"><Intro /></div>
+      <a class="cover" href="https://apidesignbook.com">
+        <img src="/images/books/api-design-patterns.png" alt="API Design Patterns by JJ Geewax" width="360" height="451" />
+      </a>
+    </div>
+
+    <exercise-list>
+      <nav class="toc" aria-label="Exercises">
+        {
+          chapters.map(({ ch, title, items }) => (
+            <div class="toc-row">
+              <span class="label">
+                Chapter {ch}
+                {title && <span class="toc-title">{title}</span>}
+              </span>
+              <ul>
+                {items.map((e) => (
+                  <li>
+                    <a href={`#exercise-${e.id}`}>{e.data.exercise}</a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))
+        }
+        <button type="button" class="button toggle-all" aria-pressed="false">Show all solutions</button>
+      </nav>
+
+      {
+        chapters.map(({ ch, title, items }) => (
+          <section class="chapter" aria-labelledby={`chapter-${ch}`}>
+            <h2 id={`chapter-${ch}`}>
+              <span class="label">Chapter {ch}</span>
+              {title}
+            </h2>
+            {items.map(({ id, data, Content, minutes }) => (
+              <article class="ex" id={`exercise-${id}`}>
+                <h3>
+                  <a href={`#exercise-${id}`} class="num" aria-label={`Link to exercise ${data.exercise}`}>
+                    {data.exercise}
+                  </a>
+                  <span class="visually-hidden">Exercise {data.exercise}</span>
+                </h3>
+                <p class="question" set:html={questionMd(data.question)} />
+                <details class="solution">
+                  <summary>
+                    <span class="show">Show solution</span>
+                    <span class="hide">Hide solution</span>
+                    <span class="meta">{minutes} min read</span>
+                  </summary>
+                  <div class="prose answer">
+                    <Content />
+                  </div>
+                </details>
+              </article>
+            ))}
+          </section>
+        ))
+      }
+    </exercise-list>
+  </div>
+</Base>
+
+<script>
+  class ExerciseList extends HTMLElement {
+    connectedCallback() {
+      const all = () => [...this.querySelectorAll<HTMLDetailsElement>('details.solution')];
+      const toggle = this.querySelector<HTMLButtonElement>('.toggle-all')!;
+      const sync = () => {
+        const open = all().every((d) => d.open);
+        toggle.setAttribute('aria-pressed', String(open));
+        toggle.textContent = open ? 'Hide all solutions' : 'Show all solutions';
+      };
+      toggle.addEventListener('click', () => {
+        const open = toggle.getAttribute('aria-pressed') !== 'true';
+        all().forEach((d) => (d.open = open));
+      });
+      all().forEach((d) => d.addEventListener('toggle', sync));
+
+      // Old per-exercise URLs land here with #exercise-3-1: open that one.
+      const openFromHash = () => {
+        const target = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+        const details = target?.querySelector<HTMLDetailsElement>('details.solution');
+        if (details) details.open = true;
+      };
+      openFromHash();
+      window.addEventListener('hashchange', openFromHash);
+    }
+  }
+  customElements.define('exercise-list', ExerciseList);
+</script>
+
+<style>
+  .intro {
+    display: grid;
+    grid-template-columns: 1fr 10rem;
+    gap: 3rem;
+    align-items: start;
+    margin-bottom: 2.5rem;
+  }
+  .cover img {
+    display: block;
+    border-radius: 3px 6px 6px 3px;
+    box-shadow: var(--shadow);
+    transition: transform 0.4s var(--ease), box-shadow 0.4s var(--ease);
+  }
+  .cover:hover img {
+    transform: translateY(-3px) rotate(-1deg);
+    box-shadow: var(--shadow-lift);
+  }
+  @media (max-width: 40rem) {
+    .intro {
+      grid-template-columns: 1fr;
+    }
+    .cover {
+      display: none;
+    }
+  }
+
+  /* Contents */
+  .toc {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem 2.5rem;
+    padding: 1.25rem 1.5rem;
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    background: var(--bg-sunk);
+    margin-bottom: 1rem;
+  }
+  .toc-row {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+  }
+  .toc-title {
+    display: block;
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 400;
+    font-size: 0.8125rem;
+    color: var(--ink-2);
+  }
+  .toc ul {
+    display: flex;
+    gap: 0.4rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .toc ul a {
+    display: grid;
+    place-items: center;
+    min-width: 2.75rem;
+    padding: 0.35rem 0.6rem;
+    border-radius: 8px;
+    border: 1px solid var(--rule-strong);
+    background: var(--bg-elev);
+    font: 600 0.9rem var(--sans);
+    font-variant-numeric: tabular-nums;
+    text-decoration: none;
+    transition: border-color 0.2s, color 0.2s, transform 0.2s var(--ease);
+  }
+  .toc ul a:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+  }
+  .toggle-all {
+    margin-left: auto;
+  }
+
+  /* Chapters & exercises */
+  .chapter {
+    margin-top: clamp(2.5rem, 5vw, 4rem);
+  }
+  .chapter > h2 {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    font-size: clamp(1.6rem, 1.3rem + 1vw, 2.1rem);
+    margin: 0 0 1.25rem;
+  }
+  .chapter > h2 .label {
+    color: var(--accent);
+  }
+  .ex {
+    position: relative;
+    padding: clamp(1.25rem, 3vw, 2rem);
+    border: 1px solid var(--rule);
+    border-radius: 14px;
+    background: var(--bg-elev);
+    scroll-margin-top: 5.5rem;
+    transition: box-shadow 0.3s, border-color 0.3s;
+  }
+  .ex + .ex {
+    margin-top: 1rem;
+  }
+  .ex:target {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  .ex h3 {
+    margin: 0 0 0.75rem;
+  }
+  .num {
+    font: 600 1.5rem var(--serif);
+    color: var(--accent);
+    text-decoration: none;
+    font-variant-numeric: tabular-nums;
+  }
+  .num::after {
+    content: '#';
+    margin-left: 0.35rem;
+    font-size: 0.9rem;
+    color: var(--ink-3);
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .num:hover::after,
+  .num:focus-visible::after {
+    opacity: 1;
+  }
+  .question {
+    margin: 0;
+    max-width: 46rem;
+    font-size: clamp(1.15rem, 1.05rem + 0.4vw, 1.3rem);
+    line-height: 1.55;
+    padding-left: 1.1rem;
+    border-left: 2px solid var(--rule-strong);
+  }
+  .question :global(code) {
+    font-family: var(--mono);
+    font-size: 0.8em;
+    background: var(--bg-sunk);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 0.1em 0.35em;
+  }
+
+  /* Solution reveal */
+  .solution {
+    margin-top: 1.25rem;
+    interpolate-size: allow-keywords;
+  }
+  .solution::details-content {
+    block-size: 0;
+    overflow: hidden;
+    transition:
+      block-size 0.4s var(--ease),
+      content-visibility 0.4s allow-discrete;
+  }
+  .solution[open]::details-content {
+    block-size: auto;
+  }
+  summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    list-style: none;
+    font: 500 0.875rem var(--sans);
+    padding: 0.6rem 1rem;
+    border-radius: 999px;
+    border: 1px solid var(--rule-strong);
+    transition: border-color 0.2s, background 0.2s;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+  summary::before {
+    content: '';
+    width: 0.45rem;
+    height: 0.45rem;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: rotate(-45deg);
+    transition: transform 0.25s var(--ease);
+  }
+  .solution[open] summary::before {
+    transform: rotate(45deg) translate(-2px, -2px);
+  }
+  summary:hover {
+    border-color: var(--ink-3);
+    background: var(--bg-sunk);
+  }
+  summary .meta {
+    font-size: 0.75rem;
+  }
+  .hide,
+  .solution[open] .show {
+    display: none;
+  }
+  .solution[open] .hide {
+    display: inline;
+  }
+  .answer {
+    max-width: 46rem;
+    padding-top: 1.75rem;
+  }
+  .answer :global(h4) {
+    font-size: 1.3rem;
+  }
+  .answer :global(h5) {
+    font-size: 1.1rem;
+    margin: 1.75rem 0 0.5rem;
+  }
+  .answer :global(pre + p > em:only-child) {
+    display: block;
+    margin-top: -1rem;
+    font: 0.8125rem var(--sans);
+    font-style: normal;
+    color: var(--ink-3);
+  }
+  @media print {
+    .toc,
+    summary {
+      display: none;
+    }
+    .solution::details-content {
+      block-size: auto;
+      content-visibility: visible;
+    }
+  }
+</style>

@@ -1,0 +1,27 @@
+---
+import Base from '../../layouts/Base.astro';
+import PostList from '../../components/PostList.astro';
+import TagFilter from '../../components/TagFilter.astro';
+import { getPosts, allTags, tagLabel } from '../../lib/posts';
+
+export async function getStaticPaths() {
+  const posts = await getPosts();
+  return allTags(posts).map(({ tag }) => ({ params: { tag } }));
+}
+
+const { tag } = Astro.params;
+const posts = await getPosts();
+const tagged = posts.filter((p) => p.data.tags.includes(tag));
+const label = tagLabel(tag);
+---
+
+<Base title={label} description={`Writing by JJ Geewax about ${label}.`}>
+  <div class="wrap">
+    <header class="page-head rise">
+      <p class="eyebrow">Writing</p>
+      <h1>{label}</h1>
+    </header>
+    <TagFilter tags={allTags(posts)} total={posts.length} active={tag} />
+    <PostList posts={tagged} groupByYear />
+  </div>
+</Base>

@@ -1,0 +1,20 @@
+---
+import { getEntry, render } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import { personJsonLd } from '../lib/jsonld';
+
+const page = (await getEntry('pages', 'about'))!;
+const { Content } = await render(page);
+---
+
+<Base title={page.data.title} description={page.data.description} jsonLd={personJsonLd()}>
+  <div class="wrap">
+    <header class="page-head rise">
+      <p class="eyebrow">About</p>
+      <h1>JJ Geewax</h1>
+    </header>
+    <div class="prose">
+      <Content />
+    </div>
+  </div>
+</Base>
